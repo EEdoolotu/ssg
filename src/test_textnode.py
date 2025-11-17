@@ -1,7 +1,6 @@
 import unittest
 from htmlnode import LeafNode
-from textnode import TextNode, TextType, text_node_to_html_node
-from markdown_converter import split_nodes_delimiter, extract_markdown_images, extract_markdown_links
+from textnode import TextNode,split_nodes_delimiter, TextType, text_node_to_html_node, text_to_textnodes, split_nodes_image, split_nodes_link, extract_markdown_images, extract_markdown_links
 
 
 class TestTextNode(unittest.TestCase):
@@ -94,6 +93,74 @@ class TestTextNode(unittest.TestCase):
     def test_extract_no_links(self):
         matches = extract_markdown_links("Just plain text here")
         self.assertListEqual([], matches)
+
+    def test_split_images(self):
+        node = TextNode(
+            "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png) and another ![second image](https://i.imgur.com/3elNhQu.png)",
+            TextType.TEXT,
+        )
+        new_nodes = split_nodes_image([node])
+        self.assertListEqual(
+            [
+                TextNode("This is text with an ", TextType.TEXT),
+                TextNode("image", TextType.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
+                TextNode(" and another ", TextType.TEXT),
+                TextNode(
+                    "second image", TextType.IMAGE, "https://i.imgur.com/3elNhQu.png"
+                ),
+            ],
+            new_nodes,
+        )
+
+    def test_text_to_textnodes_all_types(self):
+        text = "This is **bold** and *italic* and `code` and ![img](https://example.com/img.png) and [link](https://example.com)"
+        nodes = text_to_textnodes(text)
+        expected = [
+            TextNode("This is ", TextType.TEXT),
+            TextNode("bold", TextType.BOLD),
+            TextNode(" and ", TextType.TEXT),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(" and ", TextType.TEXT),
+            TextNode("code", TextType.CODE),
+            TextNode(" and ", TextType.TEXT),
+            TextNode("img", TextType.IMAGE, "https://example.com/img.png"),
+            TextNode(" and ", TextType.TEXT),
+            TextNode("link", TextType.LINK, "https://example.com"),
+        ]
+        self.assertEqual(nodes, expected)
+
+    def test_text_to_textnodes_plain_text(self):
+        text = "Just plain text here"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(nodes, [TextNode("Just plain text here", TextType.TEXT)])
+
+    def test_text_to_textnodes_bold_only(self):
+        text = "This is **bold text** here"
+        nodes = text_to_textnodes(text)
+        expected = [
+            TextNode("This is ", TextType.TEXT),
+            TextNode("bold text", TextType.BOLD),
+            TextNode(" here", TextType.TEXT),
+        ]
+        self.assertEqual(nodes, expected)
+
+    def test_text_to_textnodes_multiple_same_type(self):
+        text = "**bold1** and **bold2**"
+        nodes = text_to_textnodes(text)
+        expected = [
+            TextNode("bold1", TextType.BOLD),
+            TextNode(" and ", TextType.TEXT),
+            TextNode("bold2", TextType.BOLD),
+        ]
+        self.assertEqual(nodes, expected)
+
+    def test_text_to_textnodes_nested_not_supported(self):
+        # Note: This shows the limitation - nested markdown isn't handled
+        text = "**bold and *italic* together**"
+        nodes = text_to_textnodes(text)
+        # This will split on bold first, then italic won't be inside bold text
+        # Just documenting expected behavior
+        self.assertIsInstance(nodes, list)
 
 
 if __name__ == "__main__":
