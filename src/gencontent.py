@@ -6,12 +6,24 @@ from markdown_blocks import markdown_to_html_node
 def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, basepath):
     for filename in os.listdir(dir_path_content):
         from_path = os.path.join(dir_path_content, filename)
-        dest_path = os.path.join(dest_dir_path, filename)
-        if os.path.isfile(from_path):
-            dest_path = Path(dest_path).with_suffix(".html")
-            generate_page(from_path, template_path, dest_path, basepath)
+        # If the file is a folder, recurse
+        if os.path.isdir(from_path):
+            dest_subdir = os.path.join(dest_dir_path, filename)
+            generate_pages_recursive(from_path, template_path, dest_subdir, basepath)
         else:
-            generate_pages_recursive(from_path, template_path, dest_path, basepath)
+            # Determine the correct destination HTML path
+            if filename == "index.md":
+                # Keep folder structure: folder/index.html
+                dest_path = os.path.join(dest_dir_path, "index.html")
+            else:
+                # Convert filename.md -> filename.html
+                dest_path = os.path.join(dest_dir_path, Path(filename).with_suffix(".html").name)
+            
+            # Ensure destination folder exists
+            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+            generate_page(from_path, template_path, dest_path, basepath)
+
+
 
 
 def generate_page(from_path, template_path, dest_path, basepath):

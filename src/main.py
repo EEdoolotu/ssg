@@ -13,7 +13,7 @@ DIR_STATIC = "./static"
 DIR_PUBLIC = "./docs"  # you use "docs" instead of "public"
 DIR_CONTENT = "./content"
 TEMPLATE_PATH = "./template.html"
-DEFAULT_BASEPATH = "/"
+DEFAULT_BASEPATH = "/ssg/"
 
 
 def start_server():
@@ -26,7 +26,7 @@ def start_server():
 
 def main():
     # Optional basepath argument
-    basepath = DEFAULT_BASEPATH
+    basepath = "/ssg/"
     if len(sys.argv) > 1:
         basepath = sys.argv[1]
 
